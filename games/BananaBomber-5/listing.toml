@@ -1,0 +1,13 @@
+[metadata]
+name = "BananaBomber"
+authors = [
+    "Andrew Goodenough",
+    "Connor McPherson"
+]
+creation_date = "September 14th, 2014"
+
+[config]
+img_path = "example.png"
+exec_path = "game.exe"
+scores_path = "scores.csv" # [Optional]
+volume = 100 # 0 - 255 [Optional]
