@@ -110,6 +110,7 @@ fn load_listings (
                             .insert(ID(id_count))
                             .insert(gl);
                         id_count += 1;
+                        selector.total_games = id_count + 1;
                         GameListing::default()
                     },
                     Err(error) => {println!("Error parsing the listing.toml : {:?}", error.to_string()); GameListing::default()},
@@ -119,7 +120,6 @@ fn load_listings (
             Err(error) => {println!("Error loading the listing.toml : {:?}", error.to_string()); String::default()},
         };
     }
-    selector.total_games = id_count + 1;
 
     commands.spawn_bundle(Camera2dBundle::default());
 }
