@@ -1,6 +1,7 @@
 use bevy::{prelude::*, window::{PresentMode, WindowMode}, asset::AssetServerSettings };
 use lerp::Lerp;
 use serde::{Deserialize};
+use toml::de::Error;
 use std::fs;
 
 const CLEAR : Color = Color::rgb(0.1,0.1,0.1);
@@ -24,6 +25,7 @@ fn main () {
             mode: WindowMode::BorderlessFullscreen,
             ..default()
         })
+        //Ensure that bevy's AssetServer points to our root directory instead of "./assets"
         .insert_resource(AssetServerSettings {
             asset_folder: "".to_string(),
             ..default()
@@ -89,21 +91,34 @@ fn load_listings (
     asset_server: Res<AssetServer>,
     mut selector: ResMut<Selector>
 ) { 
+    // Get all the filepaths to the folders in "./games"
     let paths = fs::read_dir("games\\").unwrap();
+    // ID variable to iterate.
     let mut id_count: u32 = 0;
 
+    //Iterate through the paths and load the listing file in the folder.
     for path in paths {
-        let cfg_data = fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml"));
-        let deserialized_data: GameListing = toml::from_str(&cfg_data.unwrap()).unwrap();
-        println!("{:?}",&deserialized_data);
-        commands.spawn_bundle(SpriteBundle {
-            texture: asset_server.load(path.unwrap().path().join(&deserialized_data.config.img_path)),
-            transform: Transform::from_xyz((-336.0*2.0) + (((id_count as f32)%5.0) * 336.0), (((id_count/5) as f32)) * -478.0, 0.0),
-            ..default()
-        })
-            .insert(ID(id_count))
-            .insert(deserialized_data);
-        id_count += 1;
+        //let cfg_data = fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml"));
+        let cfg_data : String = match fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml")) {
+            Ok(s) => {
+                let deserialized_data: GameListing = match toml::from_str::<GameListing>(&s) {
+                    Ok(gl) => {
+                        commands.spawn_bundle(SpriteBundle {
+                            texture: asset_server.load(path.unwrap().path().join(&gl.config.img_path)),
+                            transform: Transform::from_xyz((-336.0*2.0) + (((id_count as f32)%5.0) * 336.0), (((id_count/5) as f32)) * -478.0, 0.0),
+                            ..default()
+                        })
+                            .insert(ID(id_count))
+                            .insert(gl);
+                        id_count += 1;
+                        GameListing::default()
+                    },
+                    Err(error) => {println!("Error parsing the listing.toml : {:?}", error.to_string()); GameListing::default()},
+                };
+                s
+            },
+            Err(error) => {println!("Error loading the listing.toml : {:?}", error.to_string()); String::default()},
+        };
     }
     selector.total_games = id_count + 1;
 
@@ -136,7 +151,7 @@ fn select (
     }
     // A down
     if keys.any_just_pressed([KeyCode::J, KeyCode::E]) {
-        println!("A DOWN");
+        
     }
     // B down
     if keys.any_just_pressed([KeyCode::K, KeyCode::R]) {
