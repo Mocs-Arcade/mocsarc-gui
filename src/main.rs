@@ -34,7 +34,6 @@ fn main () {
         .insert_resource(Selector::default())
         .add_plugins(DefaultPlugins)
         .add_startup_system(load_listings)
-        .add_system(game_menu)
         .add_system(select)
         .add_system(lerp_camera)
         .add_startup_system(load_assets)
@@ -222,10 +221,4 @@ fn keyboard_input (
     if keys.any_pressed([KeyCode::K, KeyCode::R]) {
         println!("B DOWN");
     }
-}
-
-fn game_menu (
-
-) {
-
 }
