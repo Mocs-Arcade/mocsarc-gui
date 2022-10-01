@@ -1,21 +1,38 @@
+
+/// - Bevy Includes - ///
 use bevy::{prelude::*, window::{PresentMode, WindowMode}, asset::AssetServerSettings };
-use lerp::Lerp;
 use serde::{Deserialize};
+
+/// Toml Includes ///
 use toml::de::Error;
+
+/// STL Includes ///
 use std::fs;
 
-const CLEAR : Color = Color::rgb(0.1,0.1,0.1);
+/// - Lerp Includes - ///
+use lerp::Lerp;
 
-// includes the file "game_listing.rs"
+/// - Local Includes - ///
 mod game_listing;
-use game_listing::*;
+use game_listing::{GameListing, ID};
 
 mod selector;
-use selector::*;
+use selector::{Selector, select, lerp_camera};
+
+mod download;
+use download::*;
+
+// Configuration Constant - the background color //
+const CLEAR : Color = Color::rgb(0.1,0.1,0.1);
 
 fn main () {
+
+    download();
+
     App::new()
+        // Tell bevy to clear the screen with Black
         .insert_resource(ClearColor(CLEAR))
+        // Set up the window
         .insert_resource(WindowDescriptor {
             title: "I am a window!".to_string(),
             width: 1920.,
@@ -26,13 +43,17 @@ fn main () {
             ..default()
         })
         //Ensure that bevy's AssetServer points to our root directory instead of "./assets"
+        // done for convenience
         .insert_resource(AssetServerSettings {
             asset_folder: "".to_string(),
             ..default()
         })
+        // Initialize our Selector resource so it can be accessed
         .init_resource::<Selector>()
         .insert_resource(Selector::default())
+        // Default plugins will add everything we need
         .add_plugins(DefaultPlugins)
+        // Add all of our systems we want to run
         .add_startup_system(load_listings)
         .add_system(select)
         .add_system(lerp_camera)
@@ -40,10 +61,13 @@ fn main () {
         .run();
 }
 
+/// Load Static Assets into the GUI
 fn load_assets (
     mut commands: Commands, 
     asset_server: Res<AssetServer>
 ) {
+
+    // load text for top of screen
 
     let font = asset_server.load("assets/game-played-font/GamePlayed-vYL7.ttf");
     let text_style = TextStyle {
@@ -61,7 +85,7 @@ fn load_assets (
             ..default()
         }
     );
-
+    /* unused for now
     commands
     .spawn_bundle(NodeBundle {
         style: Style {
@@ -83,8 +107,10 @@ fn load_assets (
             ..default()
         });
     });
+    */
 }
 
+/// Load all games into the Bevy World
 fn load_listings (
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -97,7 +123,6 @@ fn load_listings (
 
     //Iterate through the paths and load the listing file in the folder.
     for path in paths {
-        //let cfg_data = fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml"));
         let cfg_data : String = match fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml")) {
             Ok(s) => {
                 let deserialized_data: GameListing = match toml::from_str::<GameListing>(&s) {
@@ -124,101 +149,10 @@ fn load_listings (
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
-const SCALE_SMOOTHING : f32 = 0.35;
-const TRANSLATE_SMOOTHING : f32 = 0.15;
-
-fn select (
-    mut res: ResMut<Selector>,
-    mut query_games: Query<(&mut GameListing, &ID, &mut Transform)>,
-    keys: Res<Input<KeyCode>>,
-) {
-    // Joystick up
-    if keys.any_just_pressed([KeyCode::Up, KeyCode::W]) {
-        if res.current > 4 { res.current -= 5; }
-    }
-    // Joystick Down
-    if keys.any_just_pressed([KeyCode::Down, KeyCode::S]) {
-        if res.current + 5 < res.total_games - 1 { res.current += 5; }
-    }
-    // Joystick Left
-    if keys.any_just_pressed([KeyCode::Left, KeyCode::A]) {
-        if res.current != 0 { res.current -= 1; }
-    }
-    // Joystick Right
-    if keys.any_just_pressed([KeyCode::Right, KeyCode::D]) {
-        if res.current + 1 < res.total_games - 1 { res.current += 1; }
-    }
-    // A down
-    if keys.any_just_pressed([KeyCode::J, KeyCode::E]) {
-        
-    }
-    // B down
-    if keys.any_just_pressed([KeyCode::K, KeyCode::R]) {
-        println!("B DOWN");
-    }
-
-    for (gl, id, mut tr) in &mut query_games {
-        if id.0 == res.current {
-            res.y_value = tr.translation.y;
-            let mut scale = tr.scale.x.lerp(1.15, SCALE_SMOOTHING);
-            tr.translation = Vec3::new(tr.translation.x, tr.translation.y, 100.0);
-            tr.scale = Vec3::new(scale,scale,scale);
-        } else {
-            let mut scale = tr.scale.x.lerp(1.0, SCALE_SMOOTHING);
-            tr.translation = Vec3::new(tr.translation.x, tr.translation.y, 0.0);
-            tr.scale = Vec3::new(scale,scale,scale);
-        }
-    }
-
-    if keys.pressed(KeyCode::Space) {
-        println!("{}", res.current);
-    }
-    
-}
-
-fn lerp_camera (
-    mut res: ResMut<Selector>,
-    mut query_cam: Query<(&mut Transform, With<Camera>)>,
-) {
-    for (mut tr, o) in &mut query_cam {
-        tr.translation.y = tr.translation.y.lerp(res.y_value - 50.0,TRANSLATE_SMOOTHING);
-    }
-}
-
 fn query_games (
     query : Query<&GameListing>
 ) {
     for game in &query {
         println!("{:?}", game)
-    }
-}
-
-fn keyboard_input (
-    keys: Res<Input<KeyCode>>,
-) {
-    // Joystick up
-    if keys.any_pressed([KeyCode::Up, KeyCode::W]) {
-        println!("JOYSTICK UP");
-    }
-    // Joystick Down
-    if keys.any_pressed([KeyCode::Down, KeyCode::S]) {
-        println!("JOYSTICK DOWN");
-    }
-    // Joystick Left
-    if keys.any_pressed([KeyCode::Left, KeyCode::A]) {
-        println!("JOYSTICK LEFT");
-    }
-    // Joystick Right
-    if keys.any_pressed([KeyCode::Right, KeyCode::D]) {
-        // Either the left or right shift are being held down
-        println!("JOYSTICK RIGHT");
-    }
-    // A down
-    if keys.any_pressed([KeyCode::J, KeyCode::E]) {
-        println!("A DOWN");
-    }
-    // B down
-    if keys.any_pressed([KeyCode::K, KeyCode::R]) {
-        println!("B DOWN");
     }
 }

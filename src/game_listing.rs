@@ -1,6 +1,7 @@
 
 use super::*;
 
+/// Each game listing has an ID associated with it.
 #[derive(Debug, Component)]
 pub struct ID(pub u32);
 
