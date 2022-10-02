@@ -1,6 +1,10 @@
 
 use super::*;
 
+/// - Local Includes - ///
+mod executor;
+use executor::*;
+
 /// Contains Data about the current game selection in the GUI. 
 pub struct Selector {
     // The ID of the Currently Selected game
@@ -25,7 +29,7 @@ const TRANSLATE_SMOOTHING : f32 = 0.15;
 
 pub fn select (
     mut res: ResMut<Selector>,
-    mut query_games: Query<(&mut GameListing, &ID, &mut Transform)>,
+    mut query_games: Query<(&mut GameListing, &ID, &mut GamePath, &mut Transform)>,
     keys: Res<Input<KeyCode>>,
 ) {
     // Joystick up
@@ -50,11 +54,15 @@ pub fn select (
     }
     // A down - select a game
     if keys.any_just_pressed([KeyCode::J, KeyCode::E]) {
-        
+        for (gl, id, gp, _tr) in &mut query_games {
+            if id.0 == res.current {
+                execute(gp.0.clone(),gl.config.exec_path.clone());
+            }
+        }
     }
 
     // Lerp the scale o the selected scale. 
-    for (_gl, id, mut tr) in &mut query_games {
+    for (_gl, id, _gp, mut tr) in &mut query_games {
         // if this is the current selected game, scale up.
         if id.0 == res.current {
             res.y_value = tr.translation.y;
