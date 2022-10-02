@@ -54,16 +54,16 @@ pub fn select (
     }
 
     // Lerp the scale o the selected scale. 
-    for (gl, id, mut tr) in &mut query_games {
+    for (_gl, id, mut tr) in &mut query_games {
         // if this is the current selected game, scale up.
         if id.0 == res.current {
             res.y_value = tr.translation.y;
-            let mut scale = tr.scale.x.lerp(1.15, SCALE_SMOOTHING);
+            let scale = tr.scale.x.lerp(1.15, SCALE_SMOOTHING);
             tr.translation = Vec3::new(tr.translation.x, tr.translation.y, 100.0);
             tr.scale = Vec3::new(scale,scale,scale);
         // else scale down to normal
         } else {
-            let mut scale = tr.scale.x.lerp(1.0, SCALE_SMOOTHING);
+            let scale = tr.scale.x.lerp(1.0, SCALE_SMOOTHING);
             tr.translation = Vec3::new(tr.translation.x, tr.translation.y, 0.0);
             tr.scale = Vec3::new(scale,scale,scale);
         }
@@ -72,10 +72,10 @@ pub fn select (
 
 /// Lerp the Camera to the Y-value of the current selected game.
 pub fn lerp_camera (
-    mut res: ResMut<Selector>,
+    res: ResMut<Selector>,
     mut query_cam: Query<(&mut Transform, With<Camera>)>,
 ) {
-    for (mut tr, o) in &mut query_cam {
+    for (mut tr, _o) in &mut query_cam {
         tr.translation.y = tr.translation.y.lerp(res.y_value - 50.0,TRANSLATE_SMOOTHING);
     }
 }

@@ -1,13 +1,13 @@
 
 /// - Bevy Includes - ///
-use bevy::{prelude::*, window::{PresentMode, WindowMode}, asset::AssetServerSettings };
-use serde::{Deserialize};
+use bevy::{prelude::*, window::{PresentMode, WindowMode}, asset::AssetServerSettings};
+use serde::Deserialize;
 
 /// Toml Includes ///
-use toml::de::Error;
+//use toml::de::Error;
 
 /// STL Includes ///
-use std::fs;
+use std::{fs, path::PathBuf};
 
 /// - Lerp Includes - ///
 use lerp::Lerp;
@@ -121,14 +121,20 @@ fn load_listings (
     // ID variable to iterate.
     let mut id_count: u32 = 0;
 
-    //Iterate through the paths and load the listing file in the folder.
+    // Iterate through the paths and load the listing file in the folder.
     for path in paths {
-        let cfg_data : String = match fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml")) {
+        let _cfg_data : String = match fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml")) {
             Ok(s) => {
-                let deserialized_data: GameListing = match toml::from_str::<GameListing>(&s) {
+                let _deserialized_data: GameListing = match toml::from_str::<GameListing>(&s) {
                     Ok(gl) => {
+                        // Check to see if the cover image path is valid
+                        let mut img_path : PathBuf = path.unwrap().path().join(&gl.config.img_path);
+                        if !img_path.exists() {
+                            img_path = PathBuf::from("assets/img_error.png");
+                        }
+
                         commands.spawn_bundle(SpriteBundle {
-                            texture: asset_server.load(path.unwrap().path().join(&gl.config.img_path)),
+                            texture: asset_server.load(img_path),
                             transform: Transform::from_xyz((-336.0*2.0) + (((id_count as f32)%5.0) * 336.0), (((id_count/5) as f32)) * -478.0, 0.0),
                             ..default()
                         })
@@ -149,6 +155,7 @@ fn load_listings (
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
+/*
 fn query_games (
     query : Query<&GameListing>
 ) {
@@ -156,3 +163,4 @@ fn query_games (
         println!("{:?}", game)
     }
 }
+*/
