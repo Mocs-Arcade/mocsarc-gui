@@ -14,7 +14,7 @@ use lerp::Lerp;
 
 /// - Local Includes - ///
 mod game_listing;
-use game_listing::{GameListing, ID};
+use game_listing::{GameListing, ID, GamePath};
 
 mod selector;
 use selector::{Selector, select, lerp_camera};
@@ -123,12 +123,13 @@ fn load_listings (
 
     // Iterate through the paths and load the listing file in the folder.
     for path in paths {
-        let _cfg_data : String = match fs::read_to_string(path.as_ref().unwrap().path().join("listing.toml")) {
+        let game_path = path.as_ref().unwrap().path();
+        let _cfg_data : String = match fs::read_to_string(&game_path.join("listing.toml")) {
             Ok(s) => {
                 let _deserialized_data: GameListing = match toml::from_str::<GameListing>(&s) {
                     Ok(gl) => {
                         // Check to see if the cover image path is valid
-                        let mut img_path : PathBuf = path.unwrap().path().join(&gl.config.img_path);
+                        let mut img_path : PathBuf = game_path.join(&gl.config.img_path);
                         if !img_path.exists() {
                             img_path = PathBuf::from("assets/img_error.png");
                         }
@@ -139,7 +140,8 @@ fn load_listings (
                             ..default()
                         })
                             .insert(ID(id_count))
-                            .insert(gl);
+                            .insert(gl)
+                            .insert(GamePath(game_path));
                         id_count += 1;
                         selector.total_games = id_count + 1;
                         GameListing::default()

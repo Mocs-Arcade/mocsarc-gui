@@ -1,6 +1,15 @@
 
 use super::*;
 
+#[derive(Debug, Component)]
+pub struct GamePath(pub PathBuf);
+
+impl Default for GamePath {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
 /// Each game listing has an ID associated with it.
 #[derive(Debug, Component)]
 pub struct ID(pub u32);
